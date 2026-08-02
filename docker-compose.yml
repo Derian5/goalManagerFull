@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # База данных
+  db:
+    image: postgres:15
+    container_name: goal_manager_db
+    restart: always
+    networks:
+      - app-network
+    env_file:
+      - ./.env # Рекомендуется вынести переменные в .env файл
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Бэкенд API
+  api:
+    build: ./backend
+    container_name: goal_manager_api
+    restart: always
+    networks:
+      - app-network
+    env_file:
+      - ./.env
+    depends_on:
+      - db
+    # Не публикуем порт 8000 наружу, так как доступ к API будет идти только через Nginx
+
+  # Фронтенд + Обратный прокси
+  frontend:
+    build: ./frontend
+    container_name: goal_manager_frontend
+    restart: always
+    networks:
+      - app-network
+    ports:
+      - "80:80"   # Публикуем 80-й порт Nginx на основном порту сервера
+      - "443:443" # Сюда позже добавим HTTPS
+    # Здесь можно добавить конфигурацию Nginx для проксирования запросов к API
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d # Для кастомной конфигурации Nginx
+
+volumes:
+  postgres_data:
+networks:
+  app-network:
+    driver: bridge

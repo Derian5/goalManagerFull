@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: goal_manager_db
+    restart: always
+    environment:
+      POSTGRES_USER: admin        # Задайте свои значения
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: goalTaskManagerDB
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432" # Пробрасываем порт, если нужно подключиться к БД с хоста
+
+  api:
+    build: .
+    container_name: goal_manager_api
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://admin:password@db:5432/goalTaskManagerDB
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+
+volumes:
+  postgres_data:
