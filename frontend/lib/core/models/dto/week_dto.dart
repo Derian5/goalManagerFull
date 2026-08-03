@@ -17,15 +17,19 @@ class WeekDto {
   });
 
   factory WeekDto.fromJson(Map<String, dynamic> json) {
+    final activitiesJson = json['activities'];
+
     return WeekDto(
-      id: json['id'],
-      userId: json['userId'],
-      startDate: DateTime.parse(json['startDate']),
-      endDate: DateTime.parse(json['endDate']),
-      activities: (json['activities'] as List)
-          .map((activity) => ActivityDto.fromJson(activity))
+      id: json['id']?.toString() ?? '',
+      userId: (json['userId'] ?? json['user_id'])?.toString() ?? '',
+      startDate: DateTime.parse(json['startDate'] ?? json['start_date']),
+      endDate: DateTime.parse(json['endDate'] ?? json['end_date']),
+      activities: (activitiesJson is List ? activitiesJson : const [])
+          .map((activity) => ActivityDto.fromJson(
+                Map<String, dynamic>.from(activity as Map),
+              ))
           .toList(),
-      createdAt: DateTime.parse(json['createdAt']),
+      createdAt: DateTime.parse(json['createdAt'] ?? json['created_at']),
     );
   }
 
@@ -57,16 +61,20 @@ class ActivityDto {
   });
 
   factory ActivityDto.fromJson(Map<String, dynamic> json) {
-    final spentHoursMap = json['spentHours'] as Map<String, dynamic>;
+    final spentHoursJson = json['spentHours'] ?? json['spent_hours'];
+    final spentHoursMap = spentHoursJson is Map<String, dynamic>
+        ? spentHoursJson
+        : <String, dynamic>{};
     final spentHours = spentHoursMap.map(
-          (key, value) => MapEntry(key, (value as num).toDouble()),
+      (key, value) => MapEntry(key, value is num ? value.toDouble() : 0.0),
     );
 
     return ActivityDto(
-      id: json['id'],
-      name: json['name'],
-      globalGoalId: json['globalGoalId'],
-      plannedHours: json['plannedHours'],
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      globalGoalId:
+          (json['globalGoalId'] ?? json['global_goal_id'])?.toString(),
+      plannedHours: json['plannedHours'] ?? json['planned_hours'] ?? 0,
       spentHours: spentHours,
     );
   }

@@ -33,7 +33,6 @@ class ApiService {
     print('Request URL: ${ApiConfig.baseUrl}${ApiConfig.login}');
 
     final response = await client.post(
-
       Uri.parse('${ApiConfig.baseUrl}${ApiConfig.register}'),
       headers: ApiConfig.headers(null),
       body: json.encode(request.toJson()),
@@ -60,7 +59,11 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
+      final decoded = json.decode(response.body);
+      if (decoded is! List) {
+        throw Exception('Некорректный формат списка недель: ${response.body}');
+      }
+      final List<dynamic> data = decoded;
       return data.map((week) => WeekDto.fromJson(week)).toList();
     } else if (response.statusCode == 401) {
       throw Exception('Требуется авторизация');
@@ -97,6 +100,7 @@ class ApiService {
       throw Exception('Ошибка создания недели: ${response.statusCode}');
     }
   }
+
   Future<void> deleteWeek(String weekId) async {
     final token = await _getToken();
     final response = await client.delete(
@@ -109,7 +113,8 @@ class ApiService {
   }
 
   // lib/core/services/api_service.dart
-  Future<WeekDto> updateWeekHours(String weekId, UpdateHoursRequest request) async {
+  Future<WeekDto> updateWeekHours(
+      String weekId, UpdateHoursRequest request) async {
     final token = await _getToken();
 
     // 1. Отправляем запрос на обновление часов
@@ -152,7 +157,8 @@ class ApiService {
       'limit': limit.toString(),
     };
     if (search != null && search.isNotEmpty) queryParams['search'] = search;
-    if (category != null && category.isNotEmpty) queryParams['category'] = category;
+    if (category != null && category.isNotEmpty)
+      queryParams['category'] = category;
 
     final response = await client.get(
       Uri.parse('${ApiConfig.baseUrl}${ApiConfig.globalGoals}').replace(
@@ -182,7 +188,8 @@ class ApiService {
     }
   }
 
-  Future<GlobalGoalDto> createGlobalGoal(CreateGlobalGoalRequest request) async {
+  Future<GlobalGoalDto> createGlobalGoal(
+      CreateGlobalGoalRequest request) async {
     final token = await _getToken();
     final response = await client.post(
       Uri.parse('${ApiConfig.baseUrl}${ApiConfig.globalGoals}'),
@@ -198,9 +205,9 @@ class ApiService {
   }
 
   Future<GlobalGoalDto> updateGlobalGoal(
-      String goalId,
-      CreateGlobalGoalRequest request,
-      ) async {
+    String goalId,
+    CreateGlobalGoalRequest request,
+  ) async {
     final token = await _getToken();
     final response = await client.put(
       Uri.parse('${ApiConfig.baseUrl}${ApiConfig.globalGoals}/$goalId'),
@@ -238,7 +245,8 @@ class ApiService {
       final List<dynamic> data = json.decode(response.body);
       return data.map((goal) => GlobalGoalDto.fromJson(goal)).toList();
     } else {
-      throw Exception('Ошибка загрузки целей для недели: ${response.statusCode}');
+      throw Exception(
+          'Ошибка загрузки целей для недели: ${response.statusCode}');
     }
   }
 
@@ -262,7 +270,4 @@ class ApiService {
     final token = await _getToken();
     return token != null && token.isNotEmpty;
   }
-
-
-
 }
