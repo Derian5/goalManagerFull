@@ -22,4 +22,8 @@ jobs:
             cd "${{ secrets.SERVER_PROJECT_PATH }}"
             git fetch origin main
             git pull --ff-only origin main
-            docker compose up -d --build --remove-orphans
+            if docker compose version >/dev/null 2>&1; then
+              docker compose up -d --build --remove-orphans
+            else
+              docker-compose up -d --build --remove-orphans
+            fi
