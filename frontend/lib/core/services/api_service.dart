@@ -25,13 +25,11 @@ class ApiService {
     } else if (response.statusCode == 401) {
       throw Exception('Неверный email или пароль');
     } else {
-      throw Exception('Ошибка сервера: ${response.statusCode}');
+      throw Exception(_errorMessage(response, 'Ошибка входа'));
     }
   }
 
   Future<RegisterResponse> register(RegisterRequest request) async {
-    print('Request URL: ${ApiConfig.baseUrl}${ApiConfig.login}');
-
     final response = await client.post(
       Uri.parse('${ApiConfig.baseUrl}${ApiConfig.register}'),
       headers: ApiConfig.headers(null),
@@ -40,13 +38,12 @@ class ApiService {
 
     if (response.statusCode == 200) {
       return RegisterResponse.fromJson(json.decode(response.body));
-    } else if (response.statusCode == 400) {
-      final errorData = json.decode(response.body);
-      throw Exception(errorData['message'] ?? 'Ошибка регистрации');
+    } else if (response.statusCode == 400 || response.statusCode == 422) {
+      throw Exception(_errorMessage(response, 'Ошибка регистрации'));
     } else if (response.statusCode == 409) {
       throw Exception('Пользователь с таким логином уже существует');
     } else {
-      throw Exception('Ошибка сервера: ${response.statusCode}');
+      throw Exception(_errorMessage(response, 'Ошибка сервера'));
     }
   }
 
@@ -81,6 +78,8 @@ class ApiService {
 
     if (response.statusCode == 200) {
       return WeekDto.fromJson(json.decode(response.body));
+    } else if (response.statusCode == 401) {
+      throw Exception('Требуется авторизация');
     } else {
       throw Exception('Ошибка загрузки недели: ${response.statusCode}');
     }
@@ -96,6 +95,8 @@ class ApiService {
 
     if (response.statusCode == 201) {
       return WeekDto.fromJson(json.decode(response.body));
+    } else if (response.statusCode == 401) {
+      throw Exception('Требуется авторизация');
     } else {
       throw Exception('Ошибка создания недели: ${response.statusCode}');
     }
@@ -107,6 +108,9 @@ class ApiService {
       Uri.parse('${ApiConfig.baseUrl}${ApiConfig.weeks}/$weekId'),
       headers: ApiConfig.headers(token),
     );
+    if (response.statusCode == 401) {
+      throw Exception('Требуется авторизация');
+    }
     if (response.statusCode != 204) {
       throw Exception('Ошибка удаления недели: ${response.statusCode}');
     }
@@ -124,6 +128,9 @@ class ApiService {
       body: json.encode(request.toJson()),
     );
 
+    if (updateResponse.statusCode == 401) {
+      throw Exception('Требуется авторизация');
+    }
     if (updateResponse.statusCode != 200) {
       // Если сервер вернул ошибку — бросаем исключение
       final error = json.decode(updateResponse.body);
@@ -138,6 +145,8 @@ class ApiService {
 
     if (getResponse.statusCode == 200) {
       return WeekDto.fromJson(json.decode(getResponse.body));
+    } else if (getResponse.statusCode == 401) {
+      throw Exception('Требуется авторизация');
     } else {
       throw Exception('Не удалось загрузить обновлённую неделю');
     }
@@ -157,8 +166,9 @@ class ApiService {
       'limit': limit.toString(),
     };
     if (search != null && search.isNotEmpty) queryParams['search'] = search;
-    if (category != null && category.isNotEmpty)
+    if (category != null && category.isNotEmpty) {
       queryParams['category'] = category;
+    }
 
     final response = await client.get(
       Uri.parse('${ApiConfig.baseUrl}${ApiConfig.globalGoals}').replace(
@@ -169,6 +179,8 @@ class ApiService {
 
     if (response.statusCode == 200) {
       return GlobalGoalsResponse.fromJson(json.decode(response.body));
+    } else if (response.statusCode == 401) {
+      throw Exception('Требуется авторизация');
     } else {
       throw Exception('Ошибка загрузки целей: ${response.statusCode}');
     }
@@ -183,6 +195,8 @@ class ApiService {
 
     if (response.statusCode == 200) {
       return GlobalGoalDto.fromJson(json.decode(response.body));
+    } else if (response.statusCode == 401) {
+      throw Exception('Требуется авторизация');
     } else {
       throw Exception('Ошибка загрузки цели: ${response.statusCode}');
     }
@@ -199,6 +213,8 @@ class ApiService {
 
     if (response.statusCode == 201) {
       return GlobalGoalDto.fromJson(json.decode(response.body));
+    } else if (response.statusCode == 401) {
+      throw Exception('Требуется авторизация');
     } else {
       throw Exception('Ошибка создания цели: ${response.statusCode}');
     }
@@ -217,6 +233,8 @@ class ApiService {
 
     if (response.statusCode == 200) {
       return GlobalGoalDto.fromJson(json.decode(response.body));
+    } else if (response.statusCode == 401) {
+      throw Exception('Требуется авторизация');
     } else {
       throw Exception('Ошибка обновления цели: ${response.statusCode}');
     }
@@ -229,6 +247,9 @@ class ApiService {
       headers: ApiConfig.headers(token),
     );
 
+    if (response.statusCode == 401) {
+      throw Exception('Требуется авторизация');
+    }
     if (response.statusCode != 204) {
       throw Exception('Ошибка удаления цели: ${response.statusCode}');
     }
@@ -244,6 +265,8 @@ class ApiService {
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       return data.map((goal) => GlobalGoalDto.fromJson(goal)).toList();
+    } else if (response.statusCode == 401) {
+      throw Exception('Требуется авторизация');
     } else {
       throw Exception(
           'Ошибка загрузки целей для недели: ${response.statusCode}');
@@ -269,5 +292,24 @@ class ApiService {
   Future<bool> isLoggedIn() async {
     final token = await _getToken();
     return token != null && token.isNotEmpty;
+  }
+
+  String _errorMessage(http.Response response, String fallback) {
+    try {
+      final decoded = json.decode(response.body);
+      final detail =
+          decoded['detail'] ?? decoded['message'] ?? decoded['error'];
+      if (detail is String && detail.isNotEmpty) {
+        return detail;
+      }
+      if (detail is List && detail.isNotEmpty) {
+        final first = detail.first;
+        if (first is Map && first['msg'] is String) {
+          return first['msg'];
+        }
+      }
+    } catch (_) {}
+
+    return '$fallback: ${response.statusCode}';
   }
 }

@@ -24,14 +24,12 @@ class AuthRepository {
     }
   }
 
-  Future<RegisterResponse> register(String username, String password, String name) async {
+  Future<RegisterResponse> register(
+      String username, String password, String name) async {
     try {
-      final request = RegisterRequest(username: username, password: password, name: name);
+      final request =
+          RegisterRequest(username: username, password: password, name: name);
       final response = await apiService.register(request);
-      await apiService.saveToken(response.token);
-
-      // Не логиним автоматически после регистрации
-      // Пользователь должен войти отдельно
 
       return response;
     } catch (e) {

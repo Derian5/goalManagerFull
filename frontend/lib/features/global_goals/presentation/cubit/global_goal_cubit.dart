@@ -3,14 +3,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/repositories/global_goal_repository.dart';
 import '../../../../core/models/dto/global_goal_dto.dart';
 
-
 // Состояния
 abstract class GlobalGoalState {
   const GlobalGoalState();
 }
 
 class GlobalGoalInitial extends GlobalGoalState {}
+
 class GlobalGoalLoading extends GlobalGoalState {}
+
 class GlobalGoalsLoaded extends GlobalGoalState {
   final List<GlobalGoalDto> goals;
   final bool hasMore;
@@ -21,18 +22,22 @@ class GlobalGoalsLoaded extends GlobalGoalState {
     this.page = 1,
   });
 }
+
 class GlobalGoalError extends GlobalGoalState {
   final String message;
   const GlobalGoalError(this.message);
 }
+
 class GlobalGoalCreated extends GlobalGoalState {
   final GlobalGoalDto goal;
   const GlobalGoalCreated(this.goal);
 }
+
 class GlobalGoalUpdated extends GlobalGoalState {
   final GlobalGoalDto goal;
   const GlobalGoalUpdated(this.goal);
 }
+
 class GlobalGoalDeleted extends GlobalGoalState {
   final String goalId;
   const GlobalGoalDeleted(this.goalId);
@@ -64,6 +69,8 @@ class GlobalGoalCubit extends Cubit<GlobalGoalState> {
         _hasMore = true;
         _currentSearch = search;
         _currentCategory = category;
+        emit(GlobalGoalLoading());
+      } else if (state is GlobalGoalInitial) {
         emit(GlobalGoalLoading());
       } else if (state is GlobalGoalLoading) {
         return;
@@ -114,9 +121,9 @@ class GlobalGoalCubit extends Cubit<GlobalGoalState> {
 
   // Обновление цели
   Future<void> updateGoal(
-      String goalId,
-      CreateGlobalGoalRequest request,
-      ) async {
+    String goalId,
+    CreateGlobalGoalRequest request,
+  ) async {
     try {
       emit(GlobalGoalLoading());
       final updatedGoal = await _repository.updateGlobalGoal(goalId, request);
@@ -171,7 +178,7 @@ class GlobalGoalCubit extends Cubit<GlobalGoalState> {
   // Получение цели по ID
   GlobalGoalDto? getGoalById(String goalId) {
     return _allGoals.firstWhere(
-          (goal) => goal.id == goalId,
+      (goal) => goal.id == goalId,
       orElse: () => throw Exception('Goal not found'),
     );
   }

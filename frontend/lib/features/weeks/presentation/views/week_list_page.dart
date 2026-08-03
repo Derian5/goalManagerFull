@@ -40,17 +40,23 @@ class _WeekListPageState extends State<WeekListPage> {
         builder: (context) => WeekDetailPage(weekId: weekId),
       ),
     );
+    if (!mounted) return;
     context.read<WeekListCubit>().loadWeeks();
   }
 
-  void _navigateToWeekEditor() {
-    Navigator.push(
+  void _navigateToWeekEditor() async {
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => const WeekEditorPage(),
       ),
     );
+    if (!mounted) return;
     context.read<WeekListCubit>().loadWeeks();
+  }
+
+  String _cleanError(String message) {
+    return message.replaceFirst('Exception: ', '');
   }
 
   void _copyWeek(String weekId) {
@@ -102,7 +108,8 @@ class _WeekListPageState extends State<WeekListPage> {
       body: BlocConsumer<WeekListCubit, WeekListState>(
         listener: (context, state) {
           if (state is WeekListError) {
-            if (state.message.contains('Требуется авторизация')) {
+            final message = _cleanError(state.message);
+            if (message.contains('Требуется авторизация')) {
               context.read<AuthCubit>().logout();
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const AuthPage()),
@@ -112,7 +119,7 @@ class _WeekListPageState extends State<WeekListPage> {
             }
 
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
+              SnackBar(content: Text(message)),
             );
           }
         },
@@ -126,7 +133,7 @@ class _WeekListPageState extends State<WeekListPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(state.message),
+                  Text(_cleanError(state.message), textAlign: TextAlign.center),
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () {

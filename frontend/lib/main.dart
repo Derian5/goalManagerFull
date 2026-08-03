@@ -18,8 +18,6 @@ import 'features/global_goals/presentation/views/global_goals_page.dart';
 import 'features/weeks/data/repositories/week_repository.dart';
 import 'features/weeks/presentation/cubit/week_list_cubit.dart';
 import 'features/weeks/presentation/views/week_list_page.dart';
-import 'features/weeks/presentation/views/week_detail_page.dart'; // Добавляем
-import 'features/weeks/presentation/views/week_editor_page.dart'; // Добавляем
 
 void main() {
   runApp(const MyApp());
@@ -36,7 +34,6 @@ class MyApp extends StatelessWidget {
     final authRepository = AuthRepository(apiService: apiService);
     final globalGoalRepository = GlobalGoalRepository(apiService: apiService);
     final weekRepository = WeekRepository(apiService: apiService);
-
 
     return MultiProvider(
       providers: [
@@ -65,6 +62,7 @@ class MyApp extends StatelessWidget {
         ],
         child: MaterialApp(
           title: 'Time Manager',
+          debugShowCheckedModeBanner: false,
           theme: ThemeData(
             primarySwatch: Colors.blue,
             useMaterial3: true,
@@ -119,6 +117,7 @@ class AuthWrapper extends StatelessWidget {
     );
   }
 }
+
 // Создаём MainApp для авторизованных пользователей
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
@@ -134,7 +133,7 @@ class _MainAppState extends State<MainApp> {
   final List<Widget> _pages = [
     const WeekListPage(),
     const GlobalGoalsPage(),
-    const Center(child: Text('Профиль (в разработке)')),// TODO: Добавить страницу профиля
+    const ProfilePage(),
   ];
 
   void _onItemTapped(int index) {
@@ -164,6 +163,56 @@ class _MainAppState extends State<MainApp> {
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
+      ),
+    );
+  }
+}
+
+class ProfilePage extends StatelessWidget {
+  const ProfilePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Профиль')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.account_circle,
+                  size: 72, color: Colors.blueGrey),
+              const SizedBox(height: 16),
+              const Text(
+                'Вы вошли в Goal Manager',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Если сессия устарела или хотите сменить аккаунт, выйдите и войдите заново.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.logout),
+                  label: const Text('Выйти из аккаунта'),
+                  onPressed: () async {
+                    await context.read<AuthCubit>().logout();
+                    if (!context.mounted) return;
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (context) => const AuthPage()),
+                      (_) => false,
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

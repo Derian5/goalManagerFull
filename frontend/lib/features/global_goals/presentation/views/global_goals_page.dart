@@ -1,6 +1,8 @@
 // lib/features/global_goals/presentation/views/global_goals_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../auth/presentation/cubit/auth_cubit.dart';
+import '../../../auth/presentation/views/auth_page.dart';
 import '../../../../core/models/dto/global_goal_dto.dart';
 import '../cubit/global_goal_cubit.dart';
 import 'goal_editor_dialog.dart';
@@ -85,6 +87,10 @@ class _GlobalGoalsPageState extends State<GlobalGoalsPage> {
     );
   }
 
+  String _cleanError(String message) {
+    return message.replaceFirst('Exception: ', '');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -110,12 +116,14 @@ class _GlobalGoalsPageState extends State<GlobalGoalsPage> {
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    _searchController.clear();
-                    context.read<GlobalGoalCubit>().loadGoals(refresh: true);
-                  },
-                )
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          context
+                              .read<GlobalGoalCubit>()
+                              .loadGoals(refresh: true);
+                        },
+                      )
                     : null,
                 border: const OutlineInputBorder(),
               ),
@@ -135,28 +143,39 @@ class _GlobalGoalsPageState extends State<GlobalGoalsPage> {
             child: BlocConsumer<GlobalGoalCubit, GlobalGoalState>(
               listener: (context, state) {
                 if (state is GlobalGoalError) {
+                  final message = _cleanError(state.message);
+                  if (message.contains('Требуется авторизация')) {
+                    context.read<AuthCubit>().logout();
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const AuthPage()),
+                      (_) => false,
+                    );
+                    return;
+                  }
+
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(state.message)),
+                    SnackBar(content: Text(message)),
                   );
                 }
               },
               builder: (context, state) {
-                if (state is GlobalGoalLoading &&
-                    (state is! GlobalGoalsLoaded || (state as GlobalGoalsLoaded).goals.isEmpty)) {
+                if (state is GlobalGoalLoading) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                if (state is GlobalGoalError &&
-                    (state is! GlobalGoalsLoaded || (state as GlobalGoalsLoaded).goals.isEmpty)) {
+                if (state is GlobalGoalError) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(state.message),
+                        Text(_cleanError(state.message),
+                            textAlign: TextAlign.center),
                         const SizedBox(height: 20),
                         ElevatedButton(
                           onPressed: () {
-                            context.read<GlobalGoalCubit>().loadGoals(refresh: true);
+                            context
+                                .read<GlobalGoalCubit>()
+                                .loadGoals(refresh: true);
                           },
                           child: const Text('Повторить'),
                         ),
@@ -177,6 +196,38 @@ class _GlobalGoalsPageState extends State<GlobalGoalsPage> {
                     goals = currentState.goals;
                     isLoadingMore = true;
                   }
+                }
+
+                if (goals.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.flag_outlined,
+                              size: 64, color: Colors.grey),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Целей пока нет',
+                            style: TextStyle(fontSize: 18, color: Colors.grey),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Создайте первую глобальную цель, чтобы добавлять ее в недели.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                          const SizedBox(height: 24),
+                          ElevatedButton.icon(
+                            onPressed: _showCreateGoalDialog,
+                            icon: const Icon(Icons.add),
+                            label: const Text('Создать цель'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
                 }
 
                 return ListView.builder(
@@ -250,7 +301,7 @@ class _GlobalGoalsPageState extends State<GlobalGoalsPage> {
                 _deleteGoal(goal.id);
                 break;
               case 'toggle':
-              // TODO: Добавить переключение активности
+                // TODO: Добавить переключение активности
                 break;
             }
           },
