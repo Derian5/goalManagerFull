@@ -28,12 +28,16 @@ jobs:
             if docker compose version >/dev/null 2>&1; then
               docker compose version
               echo "Using docker compose"
-              exec docker compose up -d --build --remove-orphans
+              COMPOSE="docker compose"
             elif command -v docker-compose >/dev/null 2>&1; then
               docker-compose --version
               echo "Using docker-compose"
-              exec docker-compose up -d --build --remove-orphans
+              COMPOSE="docker-compose"
+            else
+              echo "Docker Compose is not installed on the server"
+              exit 1
             fi
 
-            echo "Docker Compose is not installed on the server"
-            exit 1
+            $COMPOSE build api
+            $COMPOSE build frontend
+            $COMPOSE up -d --no-build --remove-orphans
