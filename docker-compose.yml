@@ -2,7 +2,6 @@ services:
   # База данных
   db:
     image: postgres:15
-    container_name: goal_manager_db
     restart: always
     networks:
       - app-network
@@ -15,7 +14,6 @@ services:
   api:
     image: ghcr.io/derian5/goalmanagerfull-api:latest
     build: ./backend
-    container_name: goal_manager_api
     restart: always
     networks:
       - app-network
@@ -29,7 +27,6 @@ services:
   frontend:
     image: ghcr.io/derian5/goalmanagerfull-frontend:latest
     build: ./frontend
-    container_name: goal_manager_frontend
     restart: always
     networks:
       - app-network
