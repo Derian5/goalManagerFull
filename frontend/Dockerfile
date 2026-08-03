@@ -21,6 +21,5 @@ COPY --from=builder /app/build/web /usr/share/nginx/html
 COPY nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
 
 
-# Nginx listens on HTTP and HTTPS.
+# Nginx listens on HTTP.
 EXPOSE 80
-EXPOSE 443
