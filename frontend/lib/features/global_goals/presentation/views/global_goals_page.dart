@@ -338,9 +338,7 @@ class _GlobalGoalsPageState extends State<GlobalGoalsPage> {
             ),
           ],
         ),
-        onTap: () {
-          // TODO: Переход к деталям цели
-        },
+        onTap: () => _showEditGoalDialog(goal),
       ),
     );
   }
