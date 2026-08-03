@@ -22,8 +22,17 @@ jobs:
             cd "${{ secrets.SERVER_PROJECT_PATH }}"
             git fetch origin main
             git pull --ff-only origin main
+
+            docker --version
             if docker compose version >/dev/null 2>&1; then
-              docker compose up -d --build --remove-orphans
-            else
-              docker-compose up -d --build --remove-orphans
+              docker compose version
+              echo "Using docker compose"
+              exec docker compose up -d --build --remove-orphans
+            elif command -v docker-compose >/dev/null 2>&1; then
+              docker-compose --version
+              echo "Using docker-compose"
+              exec docker-compose up -d --build --remove-orphans
             fi
+
+            echo "Docker Compose is not installed on the server"
+            exit 1
