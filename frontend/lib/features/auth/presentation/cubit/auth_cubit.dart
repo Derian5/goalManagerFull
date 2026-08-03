@@ -9,15 +9,19 @@ abstract class AuthState {
 }
 
 class AuthInitial extends AuthState {}
+
 class AuthLoading extends AuthState {}
+
 class AuthSuccess extends AuthState {
   final UserDto user;
   const AuthSuccess(this.user);
 }
+
 class AuthError extends AuthState {
   final String message;
   const AuthError(this.message);
 }
+
 class RegistrationSuccess extends AuthState {
   final String message;
   const RegistrationSuccess(this.message);
@@ -73,14 +77,15 @@ class AuthCubit extends Cubit<AuthState> {
 
     try {
       await _repository.register(username, password, name);
-      emit(RegistrationSuccess('Регистрация прошла успешно! Теперь вы можете войти.'));
+      emit(RegistrationSuccess(
+          'Регистрация прошла успешно! Теперь вы можете войти.'));
     } catch (e) {
       emit(AuthError(e.toString()));
     }
   }
 
-  void logout() {
-    _repository.logout();
+  Future<void> logout() async {
+    await _repository.logout();
     emit(AuthInitial());
   }
 

@@ -2,10 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:goal_manager/core/models/dto/week_dto.dart';
+import 'package:goal_manager/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:goal_manager/features/auth/presentation/views/auth_page.dart';
 import 'package:goal_manager/features/weeks/presentation/views/week_detail_page.dart';
 import '../../../../core/widgets/week_card.dart';
 import '../cubit/week_list_cubit.dart';
-import '../../data/repositories/week_repository.dart';
 import 'week_editor_page.dart';
 
 class WeekListPage extends StatefulWidget {
@@ -101,6 +102,15 @@ class _WeekListPageState extends State<WeekListPage> {
       body: BlocConsumer<WeekListCubit, WeekListState>(
         listener: (context, state) {
           if (state is WeekListError) {
+            if (state.message.contains('Требуется авторизация')) {
+              context.read<AuthCubit>().logout();
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const AuthPage()),
+                (_) => false,
+              );
+              return;
+            }
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.message)),
             );
