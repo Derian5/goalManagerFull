@@ -21,5 +21,6 @@ COPY --from=builder /app/build/web /usr/share/nginx/html
 COPY nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
 
 
-# Nginx по умолчанию слушает 80-й порт
+# Nginx listens on HTTP and HTTPS.
 EXPOSE 80
+EXPOSE 443

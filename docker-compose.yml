@@ -34,9 +34,18 @@ services:
       - api
     ports:
       - "80:80"   # Публикуем 80-й порт Nginx на основном порту сервера
+      - "443:443" # HTTPS
     # Здесь можно добавить конфигурацию Nginx для проксирования запросов к API
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d # Для кастомной конфигурации Nginx
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
 
 volumes:
   postgres_data:

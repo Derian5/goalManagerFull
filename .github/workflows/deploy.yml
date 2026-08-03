@@ -73,8 +73,6 @@ jobs:
           command_timeout: 30m
           script: |
             cd "${{ secrets.SERVER_PROJECT_PATH }}"
-            git fetch origin main
-            git pull --ff-only origin main
 
             docker --version
             if docker compose version >/dev/null 2>&1; then
@@ -90,8 +88,47 @@ jobs:
               exit 1
             fi
 
+            DOMAIN="goalmanager.work.gd"
+            CERT_PATH="./certbot/conf/live/$DOMAIN/fullchain.pem"
+
+            if [ ! -f "$CERT_PATH" ]; then
+              echo "Issuing initial Let's Encrypt certificate for $DOMAIN"
+              $COMPOSE stop frontend || true
+              mkdir -p ./certbot/conf ./certbot/www ./certbot/lib
+              docker rm -f goalmanager-certbot-webroot >/dev/null 2>&1 || true
+              docker run -d \
+                --name goalmanager-certbot-webroot \
+                -p 80:80 \
+                -v "$(pwd)/certbot/www:/usr/share/nginx/html" \
+                nginx:alpine
+
+              if ! docker run --rm \
+                -v "$(pwd)/certbot/www:/var/www/certbot" \
+                -v "$(pwd)/certbot/conf:/etc/letsencrypt" \
+                -v "$(pwd)/certbot/lib:/var/lib/letsencrypt" \
+                certbot/certbot:latest certonly \
+                --webroot \
+                -w /var/www/certbot \
+                --non-interactive \
+                --agree-tos \
+                --register-unsafely-without-email \
+                -d "$DOMAIN"; then
+                docker rm -f goalmanager-certbot-webroot >/dev/null 2>&1 || true
+                echo "Failed to issue certificate; restoring the current frontend container"
+                $COMPOSE up -d frontend || true
+                exit 1
+              fi
+
+              docker rm -f goalmanager-certbot-webroot >/dev/null 2>&1 || true
+            fi
+
+            git fetch origin main
+            git pull --ff-only origin main
+
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
             $COMPOSE pull api frontend
             $COMPOSE up -d db
             $COMPOSE run --rm api alembic upgrade head
-            $COMPOSE up -d --no-build --remove-orphans
+            $COMPOSE up -d --no-build --remove-orphans db api frontend
+            $COMPOSE run --rm certbot renew --webroot -w /var/www/certbot --non-interactive || true
+            $COMPOSE exec -T frontend nginx -s reload || true

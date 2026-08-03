@@ -25,3 +25,6 @@ coverage/
 *.iml
 .DS_Store
 Thumbs.db
+
+# Server-managed Let's Encrypt certificates
+certbot/
