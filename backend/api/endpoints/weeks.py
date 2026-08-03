@@ -33,6 +33,7 @@ async def get_week_with_activities(week_id: str, user_id: str, db: AsyncSession)
     return result.scalar_one_or_none()
 
 
+@router.get("", response_model=List[WeekDto])
 @router.get("/", response_model=List[WeekDto])
 async def get_weeks(
         current_user: User = Depends(get_current_active_user),
@@ -46,6 +47,7 @@ async def get_weeks(
     weeks = result.scalars().all()
     return [WeekDto.model_validate(w) for w in weeks]
 
+@router.post("", response_model=WeekDto, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=WeekDto, status_code=status.HTTP_201_CREATED)
 async def create_week(
         request: CreateWeekRequest,

@@ -17,6 +17,7 @@ from schemas.goal import (
 router = APIRouter()
 
 
+@router.get("", response_model=GlobalGoalsResponse)
 @router.get("/", response_model=GlobalGoalsResponse)
 async def get_goals(
         page: int = 1,
@@ -48,6 +49,7 @@ async def get_goals(
     )
 
 
+@router.post("", response_model=GlobalGoalDto, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=GlobalGoalDto, status_code=status.HTTP_201_CREATED)
 async def create_goal(
         request: CreateGlobalGoalRequest,
