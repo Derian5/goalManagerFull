@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # База данных
   db:
@@ -15,6 +13,7 @@ services:
 
   # Бэкенд API
   api:
+    image: ghcr.io/derian5/goalmanagerfull-api:latest
     build: ./backend
     container_name: goal_manager_api
     restart: always
@@ -28,6 +27,7 @@ services:
 
   # Фронтенд + Обратный прокси
   frontend:
+    image: ghcr.io/derian5/goalmanagerfull-frontend:latest
     build: ./frontend
     container_name: goal_manager_frontend
     restart: always
